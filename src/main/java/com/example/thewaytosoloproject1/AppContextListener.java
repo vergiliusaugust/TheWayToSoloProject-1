@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-@WebListener
 public class AppContextListener implements ServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(AppContextListener.class);
