@@ -134,6 +134,21 @@ public class TaskService {
         taskRepo.deleteById(id);
     }
 
+    private TaskResponse toResponse(Task task) {
+        TaskResponse dto = new TaskResponse();
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setDescription(task.getDescription());
+        dto.setType(task.getType());
+        dto.setCompleted(task.isCompleted());
+        dto.setCreatedAt(task.getCreatedAt());
+        dto.setDueDate(task.getDueDate());
+        dto.setUserId(task.getUser().getId());
+        dto.setCategoryId(task.getCategory().getId());
+        return dto;
+    }
+
+
     public List<TaskResponse> getTasks(Long userId, Long categoryId, TaskType type) {
 
         List<Task> tasks;
@@ -159,17 +174,6 @@ public class TaskService {
         return tasks.stream()
                 .map(this::toResponse)
                 .toList();
-    }
-
-    private TaskResponse toResponse(Task task) {
-        TaskResponse dto = new TaskResponse();
-        dto.setId(task.getId());
-        dto.setTitle(task.getTitle());
-        dto.setDescription(task.getDescription());
-        dto.setType(task.getType());
-        dto.setUserId(task.getUser().getId());
-        dto.setCategoryId(task.getCategory().getId());
-        return dto;
     }
 }
 
