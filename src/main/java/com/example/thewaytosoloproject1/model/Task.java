@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import com.example.thewaytosoloproject1.model.TaskType;
+
 
 @Entity
 @Table(name = "tasks")
@@ -22,6 +24,12 @@ public class Task {
     private String title;
 
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private TaskType type;
+
+
 
     @Column(nullable = false)
     private boolean completed;

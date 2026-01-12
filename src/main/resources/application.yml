@@ -4,13 +4,23 @@ spring:
     username: taskuser
     password: taskpass
 
+
+
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+    open-in-view: false
+
 
   jackson:
     serialization:
@@ -18,3 +28,7 @@ spring:
 
 server:
   port: 8080
+
+logging:
+  level:
+    liquibase: info

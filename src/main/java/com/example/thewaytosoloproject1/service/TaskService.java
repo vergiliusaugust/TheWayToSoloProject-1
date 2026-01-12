@@ -10,9 +10,14 @@ import com.example.thewaytosoloproject1.repository.CategoryRepository;
 import com.example.thewaytosoloproject1.repository.TaskRepository;
 import com.example.thewaytosoloproject1.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.example.thewaytosoloproject1.exception.CategoryNotFoundException;
+import com.example.thewaytosoloproject1.exception.TaskNotFoundException;
+import com.example.thewaytosoloproject1.exception.UserNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.example.thewaytosoloproject1.model.TaskType;
+
 
 @Service
 public class TaskService {
@@ -40,6 +45,7 @@ public class TaskService {
         Task task = Task.builder()
                 .title(req.getTitle())
                 .description(req.getDescription())
+                .type(req.getType() == null ? TaskType.CHORE : req.getType())
                 .completed(req.isCompleted())
                 .createdAt(LocalDateTime.now())    // подстраховка к @PrePersist
                 .dueDate(req.getDueDate())
@@ -47,12 +53,13 @@ public class TaskService {
                 .category(category)
                 .build();
 
+
         return toResponse(taskRepo.save(task));
     }
 
     public TaskResponse getById(Long id) {
         Task task = taskRepo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Task with id=" + id + " not found"));
+                .orElseThrow(() -> new TaskNotFoundException(id));
         return toResponse(task);
     }
 
@@ -81,7 +88,6 @@ public class TaskService {
                 .toList();
     }
 
-    // НОВЫЙ МЕТОД — список задач по списку id
     public List<TaskResponse> getByIds(List<Long> ids) {
         return taskRepo.findAllById(ids).stream()
                 .map(this::toResponse)
@@ -98,19 +104,23 @@ public class TaskService {
         if (req.getDescription() != null) {
             task.setDescription(req.getDescription());
         }
+        if (req.getType() != null) {
+            task.setType(req.getType());
+        }
+
 
         task.setCompleted(req.isCompleted());
         task.setDueDate(req.getDueDate());
 
         if (req.getUserId() != null) {
             User user = userRepo.findById(req.getUserId())
-                    .orElseThrow(() -> new NotFoundException("User with id=" + req.getUserId() + " not found"));
+                    .orElseThrow(() -> new UserNotFoundException(req.getUserId()));
             task.setUser(user);
         }
 
         if (req.getCategoryId() != null) {
             Category category = categoryRepo.findById(req.getCategoryId())
-                    .orElseThrow(() -> new NotFoundException("Category with id=" + req.getCategoryId() + " not found"));
+                    .orElseThrow(() -> new CategoryNotFoundException(req.getCategoryId()));
             task.setCategory(category);
         }
 
@@ -124,16 +134,42 @@ public class TaskService {
         taskRepo.deleteById(id);
     }
 
+    public List<TaskResponse> getTasks(Long userId, Long categoryId, TaskType type) {
+
+        List<Task> tasks;
+
+        if (userId != null && categoryId != null && type != null) {
+            tasks = taskRepo.findByUserIdAndCategoryIdAndType(userId, categoryId, type);
+        } else if (userId != null && categoryId != null) {
+            tasks = taskRepo.findByUserIdAndCategoryId(userId, categoryId);
+        } else if (userId != null && type != null) {
+            tasks = taskRepo.findByUserIdAndType(userId, type);
+        } else if (categoryId != null && type != null) {
+            tasks = taskRepo.findByCategoryIdAndType(categoryId, type);
+        } else if (userId != null) {
+            tasks = taskRepo.findByUserId(userId);
+        } else if (categoryId != null) {
+            tasks = taskRepo.findByCategoryId(categoryId);
+        } else if (type != null) {
+            tasks = taskRepo.findByType(type);
+        } else {
+            tasks = taskRepo.findAll();
+        }
+
+        return tasks.stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     private TaskResponse toResponse(Task task) {
         TaskResponse dto = new TaskResponse();
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
-        dto.setCompleted(task.isCompleted());
-        dto.setCreatedAt(task.getCreatedAt());
-        dto.setDueDate(task.getDueDate());
+        dto.setType(task.getType());
         dto.setUserId(task.getUser().getId());
         dto.setCategoryId(task.getCategory().getId());
         return dto;
     }
 }
+

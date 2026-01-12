@@ -18,14 +18,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Можно будет расширить (password, roles и т.д.), пока минимально
+
     @Column(nullable = false, unique = true)
     private String username;
 
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Обратная связь с задачами
+
     @OneToMany(mappedBy = "user")
     private List<Task> tasks;
 }

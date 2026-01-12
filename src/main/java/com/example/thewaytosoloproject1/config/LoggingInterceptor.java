@@ -25,7 +25,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
                 request.getRequestURI(),
                 handler);
 
-        return true; // если вернуть false – дальше по цепочке не пойдёт
+        return true;
     }
 
     @Override
