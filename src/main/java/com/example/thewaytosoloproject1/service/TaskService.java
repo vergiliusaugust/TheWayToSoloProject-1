@@ -70,12 +70,13 @@ public class TaskService {
                 .category(category)
                 .build();
 
+        task.setStatus(TaskStatus.NEW);
         Task saved = taskRepo.save(task);
 
         taskCache.evictAll();
         producer.send(TaskEvent.of(TaskEventType.TASK_CREATED, saved.getId(), toResponse(saved)));
 
-        return toResponse(taskRepo.save(task));
+        return toResponse(saved);
     }
 
     public TaskResponse getById(Long id) {
