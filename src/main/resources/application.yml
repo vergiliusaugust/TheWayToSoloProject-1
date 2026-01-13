@@ -13,6 +13,16 @@ spring:
     cache:
       redis:
         enabled: true
+    kafka:
+      topics:
+        task-events: task-events
+
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+
 
 
 

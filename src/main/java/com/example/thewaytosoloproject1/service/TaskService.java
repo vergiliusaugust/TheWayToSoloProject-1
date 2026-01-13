@@ -9,6 +9,7 @@ import com.example.thewaytosoloproject1.model.User;
 import com.example.thewaytosoloproject1.repository.CategoryRepository;
 import com.example.thewaytosoloproject1.repository.TaskRepository;
 import com.example.thewaytosoloproject1.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import com.example.thewaytosoloproject1.exception.CategoryNotFoundException;
 import com.example.thewaytosoloproject1.exception.TaskNotFoundException;
@@ -21,6 +22,9 @@ import com.example.thewaytosoloproject1.cache.TaskCache;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.example.thewaytosoloproject1.model.TaskStatus;
+import com.example.thewaytosoloproject1.events.TaskEventType;
+import com.example.thewaytosoloproject1.events.TaskEvent;
+import com.example.thewaytosoloproject1.events.TaskEventProducer;
 
 
 @Service
@@ -30,17 +34,21 @@ public class TaskService {
     private final UserRepository userRepo;
     private final CategoryRepository categoryRepo;
     private final TaskCache taskCache;
+    private final TaskEventProducer producer;
 
 
     public TaskService(TaskRepository taskRepo,
                        UserRepository userRepo,
                        CategoryRepository categoryRepo,
-                       TaskCache taskCache) {
+                       TaskCache taskCache,
+                       TaskEventProducer producer) {
         this.taskRepo = taskRepo;
         this.userRepo = userRepo;
         this.categoryRepo = categoryRepo;
         this.taskCache = taskCache;
+        this.producer = producer;
     }
+
 
 
     public TaskResponse create(TaskRequest req) {
@@ -62,12 +70,11 @@ public class TaskService {
                 .category(category)
                 .build();
 
-        task.setCreatedAt(LocalDateTime.now());
-        if (task.getStatus() == null) task.setStatus(TaskStatus.NEW);
-
         Task saved = taskRepo.save(task);
 
         taskCache.evictAll();
+        producer.send(TaskEvent.of(TaskEventType.TASK_CREATED, saved.getId(), toResponse(saved)));
+
         return toResponse(taskRepo.save(task));
     }
 
@@ -121,8 +128,6 @@ public class TaskService {
         if (req.getType() != null) {
             task.setType(req.getType());
         }
-
-
         task.setCompleted(req.isCompleted());
         task.setDueDate(req.getDueDate());
 
@@ -137,22 +142,21 @@ public class TaskService {
                     .orElseThrow(() -> new CategoryNotFoundException(req.getCategoryId()));
             task.setCategory(category);
         }
+
         Task saved = taskRepo.save(task);
 
         taskCache.evictAll();
+        producer.send(TaskEvent.of(TaskEventType.TASK_UPDATED, saved.getId(), toResponse(saved)));
+
         return toResponse(taskRepo.save(task));
     }
 
     public void delete(Long id) {
-        if (!taskRepo.existsById(id)) {
-            throw new NotFoundException("Task with id=" + id + " not found");
-        }
-        taskRepo.deleteById(id);
-
         Task task = taskRepo.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
         taskRepo.delete(task);
-
         taskCache.evictAll();
+
+        producer.send(TaskEvent.of(TaskEventType.TASK_DELETED, id, null));
     }
 
     private TaskResponse toResponse(Task task) {
@@ -230,7 +234,5 @@ public class TaskService {
 
         return page.map(this::toResponse);
     }
-
-
 }
 
