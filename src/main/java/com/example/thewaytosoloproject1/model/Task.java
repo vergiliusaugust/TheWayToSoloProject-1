@@ -5,7 +5,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import com.example.thewaytosoloproject1.model.TaskType;
-
+import java.time.LocalDateTime;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "tasks")
@@ -51,5 +54,9 @@ public class Task {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TaskStatus status = TaskStatus.NEW;
 
 }

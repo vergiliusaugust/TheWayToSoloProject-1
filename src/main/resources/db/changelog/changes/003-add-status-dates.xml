@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.23.xsd">
+
+
+    <changeSet id="003-1-add-status" author="august">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="tasks" columnName="status"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="tasks">
+            <column name="status" type="varchar(32)" defaultValue="NEW">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet id="003-2-add-created-at" author="august">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="tasks" columnName="created_at"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="tasks">
+            <column name="created_at" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
+
+    <changeSet id="003-3-fill-created-at" author="august">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="tasks" columnName="created_at"/>
+        </preConditions>
+
+        <update tableName="tasks">
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+            <where>created_at IS NULL</where>
+        </update>
+    </changeSet>
+
+
+    <changeSet id="003-4-created-at-not-null" author="august">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <columnExists tableName="tasks" columnName="created_at"/>
+                <not>
+                    <sqlCheck expectedResult="0">
+                        SELECT COUNT(*) FROM tasks WHERE created_at IS NULL
+                    </sqlCheck>
+                </not>
+            </and>
+        </preConditions>
+
+        <addNotNullConstraint tableName="tasks"
+                              columnName="created_at"
+                              columnDataType="timestamp"/>
+    </changeSet>
+
+    <changeSet id="003-5-add-due-date" author="august">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="tasks" columnName="due_date"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="tasks">
+            <column name="due_date" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

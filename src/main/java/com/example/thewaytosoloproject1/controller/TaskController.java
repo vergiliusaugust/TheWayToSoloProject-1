@@ -7,6 +7,9 @@ import com.example.thewaytosoloproject1.service.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
 
 import java.util.List;
 
@@ -31,13 +34,20 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> getTasks(
+    public Page<TaskResponse> getTasks(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) TaskType type
+            @RequestParam(required = false) TaskType type,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) LocalDateTime createdFrom,
+            @RequestParam(required = false) LocalDateTime createdTo,
+            @RequestParam(required = false) LocalDateTime dueFrom,
+            @RequestParam(required = false) LocalDateTime dueTo,
+            Pageable pageable
     ) {
-        return service.getTasks(userId, categoryId, type);
+        return service.getTasks(userId, categoryId, type, status, createdFrom, createdTo, dueFrom, dueTo, pageable);
     }
+
 
     @PutMapping("/{id}")
     public TaskResponse update(@PathVariable Long id, @RequestBody TaskRequest req) {

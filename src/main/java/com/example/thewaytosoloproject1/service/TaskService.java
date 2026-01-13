@@ -18,6 +18,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import com.example.thewaytosoloproject1.model.TaskType;
 import com.example.thewaytosoloproject1.cache.TaskCache;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.example.thewaytosoloproject1.model.TaskStatus;
 
 
 @Service
@@ -58,6 +61,10 @@ public class TaskService {
                 .user(user)
                 .category(category)
                 .build();
+
+        task.setCreatedAt(LocalDateTime.now());
+        if (task.getStatus() == null) task.setStatus(TaskStatus.NEW);
+
         Task saved = taskRepo.save(task);
 
         taskCache.evictAll();
@@ -197,5 +204,33 @@ public class TaskService {
         return result;
 
     }
+
+    public Page<TaskResponse> getTasks(
+            Long userId,
+            Long categoryId,
+            TaskType type,
+            TaskStatus status,
+            LocalDateTime createdFrom,
+            LocalDateTime createdTo,
+            LocalDateTime dueFrom,
+            LocalDateTime dueTo,
+            Pageable pageable
+    ) {
+        Page<Task> page = taskRepo.search(
+                userId,
+                categoryId,
+                type,
+                status,
+                createdFrom,
+                createdTo,
+                dueFrom,
+                dueTo,
+                pageable
+        );
+
+        return page.map(this::toResponse);
+    }
+
+
 }
 
