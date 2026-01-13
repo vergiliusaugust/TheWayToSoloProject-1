@@ -4,6 +4,16 @@ spring:
     username: taskuser
     password: taskpass
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  app:
+    cache:
+      redis:
+        enabled: true
+
 
 
 

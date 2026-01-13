@@ -17,6 +17,7 @@ import com.example.thewaytosoloproject1.exception.UserNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.example.thewaytosoloproject1.model.TaskType;
+import com.example.thewaytosoloproject1.cache.TaskCache;
 
 
 @Service
@@ -25,14 +26,19 @@ public class TaskService {
     private final TaskRepository taskRepo;
     private final UserRepository userRepo;
     private final CategoryRepository categoryRepo;
+    private final TaskCache taskCache;
+
 
     public TaskService(TaskRepository taskRepo,
                        UserRepository userRepo,
-                       CategoryRepository categoryRepo) {
+                       CategoryRepository categoryRepo,
+                       TaskCache taskCache) {
         this.taskRepo = taskRepo;
         this.userRepo = userRepo;
         this.categoryRepo = categoryRepo;
+        this.taskCache = taskCache;
     }
+
 
     public TaskResponse create(TaskRequest req) {
 
@@ -52,8 +58,9 @@ public class TaskService {
                 .user(user)
                 .category(category)
                 .build();
+        Task saved = taskRepo.save(task);
 
-
+        taskCache.evictAll();
         return toResponse(taskRepo.save(task));
     }
 
@@ -123,7 +130,9 @@ public class TaskService {
                     .orElseThrow(() -> new CategoryNotFoundException(req.getCategoryId()));
             task.setCategory(category);
         }
+        Task saved = taskRepo.save(task);
 
+        taskCache.evictAll();
         return toResponse(taskRepo.save(task));
     }
 
@@ -132,6 +141,11 @@ public class TaskService {
             throw new NotFoundException("Task with id=" + id + " not found");
         }
         taskRepo.deleteById(id);
+
+        Task task = taskRepo.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+        taskRepo.delete(task);
+
+        taskCache.evictAll();
     }
 
     private TaskResponse toResponse(Task task) {
@@ -152,6 +166,10 @@ public class TaskService {
     public List<TaskResponse> getTasks(Long userId, Long categoryId, TaskType type) {
 
         List<Task> tasks;
+        List<TaskResponse> cached = taskCache.get(userId, categoryId, type);
+        if (cached != null) {
+            return cached;
+        }
 
         if (userId != null && categoryId != null && type != null) {
             tasks = taskRepo.findByUserIdAndCategoryIdAndType(userId, categoryId, type);
@@ -171,9 +189,13 @@ public class TaskService {
             tasks = taskRepo.findAll();
         }
 
-        return tasks.stream()
+        List<TaskResponse> result = tasks.stream()
                 .map(this::toResponse)
                 .toList();
+
+        taskCache.put(userId, categoryId, type, result);
+        return result;
+
     }
 }
 
